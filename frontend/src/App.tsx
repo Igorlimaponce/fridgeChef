@@ -10,6 +10,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import MyRecipes from "./pages/MyRecipes";
+import Pantry from "./pages/Pantry";
+import MealPlan from "./pages/MealPlan";
+import SharedRecipe from "./pages/SharedRecipe";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +44,23 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/pantry"
+              element={
+                <ProtectedRoute>
+                  <Pantry />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meal-plan"
+              element={
+                <ProtectedRoute>
+                  <MealPlan />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/shared/:token" element={<SharedRecipe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

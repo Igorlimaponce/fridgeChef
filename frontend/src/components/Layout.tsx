@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ChefHat, LogOut, BookOpen, Home } from "lucide-react";
+import { ChefHat, LogOut, BookOpen, Home, ShoppingBasket, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface LayoutProps {
@@ -39,6 +39,24 @@ export function Layout({ children }: LayoutProps) {
                   >
                     <Home className="mr-2 h-4 w-4" />
                     Dashboard
+                  </Button>
+                </Link>
+                <Link to="/pantry">
+                  <Button
+                    variant={location.pathname === "/pantry" ? "default" : "ghost"}
+                    size="sm"
+                  >
+                    <ShoppingBasket className="mr-2 h-4 w-4" />
+                    Pantry
+                  </Button>
+                </Link>
+                <Link to="/meal-plan">
+                  <Button
+                    variant={location.pathname === "/meal-plan" ? "default" : "ghost"}
+                    size="sm"
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Meal Plan
                   </Button>
                 </Link>
                 <Link to="/my-recipes">

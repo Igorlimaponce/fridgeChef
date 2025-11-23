@@ -15,6 +15,25 @@ export interface Recipe {
   content_markdown: string;
   calories_estimate: number;
   created_at: string;
+  is_public?: boolean;
+  share_token?: string;
+}
+
+export interface PantryItem {
+  id: string;
+  user_id: string;
+  name: string;
+  quantity: string;
+  created_at: string;
+}
+
+export interface MealPlan {
+  id: string;
+  user_id: string;
+  recipe_id: string;
+  date: string;
+  meal_type: string;
+  recipe_title?: string;
 }
 
 export interface AuthResponse {

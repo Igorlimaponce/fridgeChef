@@ -7,6 +7,9 @@ import {
   GenerateRecipeResponse,
   SaveRecipeRequest,
   Recipe,
+  PantryItem,
+  MealPlan,
+  RecipeFilter,
 } from "@/types/api";
 
 const BASE_URL = "http://localhost:8080/api/v1";
@@ -191,13 +194,18 @@ ${data.preferences ? `*Note: ${data.preferences}*` : ""}`,
     return response.json();
   },
 
-  async getRecipes(): Promise<Recipe[]> {
+  async getRecipes(filter?: RecipeFilter): Promise<Recipe[]> {
     if (USE_MOCK) {
       return mockApiCall([...mockRecipes]);
     }
 
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}/recipes`, {
+    const params = new URLSearchParams();
+    if (filter?.max_calories)
+      params.append("max_calories", filter.max_calories.toString());
+    if (filter?.ingredient) params.append("ingredient", filter.ingredient);
+
+    const response = await fetch(`${BASE_URL}/recipes?${params.toString()}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -231,5 +239,104 @@ ${data.preferences ? `*Note: ${data.preferences}*` : ""}`,
       const error = await response.json();
       throw new Error(error.message || "Failed to delete recipe");
     }
+  },
+
+  async toggleShareRecipe(id: string): Promise<Recipe> {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${BASE_URL}/recipes/${id}/share`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to toggle share");
+    }
+    return response.json();
+  },
+
+  async getPublicRecipe(token: string): Promise<Recipe> {
+    const response = await fetch(`${BASE_URL}/recipes/share/${token}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to fetch public recipe");
+    }
+    return response.json();
+  },
+
+  // Pantry
+  async getPantryItems(): Promise<PantryItem[]> {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${BASE_URL}/pantry`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error("Failed to fetch pantry");
+    return (await response.json()) || [];
+  },
+
+  async addPantryItem(name: string, quantity: string): Promise<PantryItem> {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${BASE_URL}/pantry`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name, quantity }),
+    });
+    if (!response.ok) throw new Error("Failed to add pantry item");
+    return response.json();
+  },
+
+  async deletePantryItem(id: string): Promise<void> {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${BASE_URL}/pantry/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error("Failed to delete pantry item");
+  },
+
+  // Meal Plan
+  async getMealPlan(startDate: string, endDate: string): Promise<MealPlan[]> {
+    const token = localStorage.getItem("token");
+    const params = new URLSearchParams({
+      start_date: startDate,
+      end_date: endDate,
+    });
+    const response = await fetch(`${BASE_URL}/meal-plans?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error("Failed to fetch meal plan");
+    return (await response.json()) || [];
+  },
+
+  async addToMealPlan(
+    recipeId: string,
+    date: string,
+    mealType: string
+  ): Promise<MealPlan> {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${BASE_URL}/meal-plans`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ recipe_id: recipeId, date, meal_type: mealType }),
+    });
+    if (!response.ok) throw new Error("Failed to add to meal plan");
+    return response.json();
+  },
+
+  async deleteMealPlan(id: string): Promise<void> {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${BASE_URL}/meal-plans/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error("Failed to delete meal plan");
   },
 };
