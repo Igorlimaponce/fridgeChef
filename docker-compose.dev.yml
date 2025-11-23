@@ -1,0 +1,90 @@
+
+# Docker Compose para Desenvolvimento Local
+# Use: docker compose -f docker-compose.dev.yfridgeChef up
+
+services:
+  # Database PostgreSQL
+  database:
+    image: postgres:16-alpine
+    container_name: fridgeChef_database_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${fridgeChef_DB_DATABASE}
+      POSTGRES_USER: ${fridgeChef_DB_USERNAME}
+      POSTGRES_PASSWORD: ${fridgeChef_DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${fridgeChef_DB_PORT:-5432}:5432"
+    volumes:
+      - psql_volume_fridgeChef_dev:/var/lib/postgresql/data
+    networks:
+      - fridgeChef_network_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${fridgeChef_DB_USERNAME} -d ${fridgeChef_DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Backend Go API - Development mode with hot reload
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: fridgeChef_backend_dev
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+      GO_ENV: development
+      # App DB envs expected by the Go service
+      FRIDGE_CHEF_DB_HOST: database
+      FRIDGE_CHEF_DB_PORT: 5432
+      FRIDGE_CHEF_DB_DATABASE: ${fridgeChef_DB_DATABASE}
+      FRIDGE_CHEF_DB_USERNAME: ${fridgeChef_DB_USERNAME}
+      FRIDGE_CHEF_DB_PASSWORD: ${fridgeChef_DB_PASSWORD}
+      FRIDGE_CHEF_DB_SCHEMA: ${fridgeChef_DB_SCHEMA:-public}
+      # Encryption key for secrets (base64 32 bytes)
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+      - go_modules:/go/pkg/mod
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - fridgeChef_network_dev
+
+  # Frontend React + Vite - Development mode with hot reload
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: fridgeChef_frontend_dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - fridgeChef_network_dev
+
+networks:
+  fridgeChef_network_dev:
+    driver: bridge
+    name: fridgeChef_network_dev
+
+volumes:
+  psql_volume_fridgeChef_dev:
+    name: fridgeChef_postgres_data_dev
+  go_modules:
+    name: fridgeChef_go_modules

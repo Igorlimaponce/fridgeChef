@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Database PostgreSQL
+  database:
+    image: postgres:16-alpine
+    container_name: fridgeChef_database
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${fridgeChef_DB_DATABASE}
+      POSTGRES_USER: ${fridgeChef_DB_USERNAME}
+      POSTGRES_PASSWORD: ${fridgeChef_DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${fridgeChef_DB_PORT:-5432}:5432"
+    volumes:
+      - psql_volume_fridgeChef:/var/lib/postgresql/data
+    networks:
+      - fridgeChef_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${fridgeChef_DB_USERNAME} -d ${fridgeChef_DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Backend Go API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fridgeChef_backend
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+      # App DB envs expected by the Go service
+      FRIDGE_CHEF_DB_HOST: database
+      FRIDGE_CHEF_DB_PORT: 5432
+      FRIDGE_CHEF_DB_DATABASE: ${fridgeChef_DB_DATABASE}
+      FRIDGE_CHEF_DB_USERNAME: ${fridgeChef_DB_USERNAME}
+      FRIDGE_CHEF_DB_PASSWORD: ${fridgeChef_DB_PASSWORD}
+      FRIDGE_CHEF_DB_SCHEMA: ${fridgeChef_DB_SCHEMA:-public}
+      # Encryption key for secrets (base64 32 bytes)
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      # Add any other app envs as needed
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - fridgeChef_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend React + Vite
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fridgeChef_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - fridgeChef_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  fridgeChef_network:
+    driver: bridge
+    name: fridgeChef_network
+
+volumes:
+  psql_volume_fridgeChef:
+    name: fridgeChef_postgres_data
