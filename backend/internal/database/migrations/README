@@ -1,0 +1,3 @@
+goose -dir "internal/database/migrations" create create_sales_table sql 
+
+Esse comando cria uma nova migration para a tabela sales
