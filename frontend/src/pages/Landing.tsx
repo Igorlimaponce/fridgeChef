@@ -1,23 +1,39 @@
 import { Link } from "react-router-dom";
-import { ChefHat, Sparkles, BookOpen, Zap } from "lucide-react";
+import { ChefHat, Sparkles, BookOpen, Zap, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Landing() {
+  const { t, language, setLanguage } = useLanguage();
+
+  const toggleLanguage = () => {
+    setLanguage(language === "en" ? "pt" : "en");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-hero">
       <nav className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2 text-2xl font-bold text-primary">
             <ChefHat className="h-8 w-8" />
-            Fridge Chef
+            {t("appTitle")}
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleLanguage}
+              className="gap-2"
+            >
+              <Languages className="h-4 w-4" />
+              {language.toUpperCase()}
+            </Button>
             <Link to="/login">
-              <Button variant="ghost">Sign In</Button>
+              <Button variant="ghost">{t("loginButton")}</Button>
             </Link>
             <Link to="/register">
-              <Button className="bg-gradient-primary shadow-warm">Get Started</Button>
+              <Button className="bg-gradient-primary shadow-warm">{t("registerButton")}</Button>
             </Link>
           </div>
         </div>
@@ -27,21 +43,20 @@ export default function Landing() {
         <div className="mx-auto max-w-4xl space-y-16 text-center">
           <div className="space-y-6">
             <h1 className="text-5xl font-bold leading-tight md:text-6xl">
-              Turn Your Ingredients Into
+              {t("landingTitlePrefix")}
               <span className="bg-gradient-primary bg-clip-text text-transparent">
                 {" "}
-                Delicious Meals
+                {t("landingTitleSuffix")}
               </span>
             </h1>
             <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-              Let AI be your personal chef. Input what's in your fridge and get instant,
-              creative recipes tailored to your ingredients.
+              {t("landingSubtitle")}
             </p>
             <div className="flex justify-center gap-4">
               <Link to="/register">
                 <Button size="lg" className="bg-gradient-primary shadow-warm">
                   <Sparkles className="mr-2 h-5 w-5" />
-                  Start Cooking with AI
+                  {t("startCooking")}
                 </Button>
               </Link>
             </div>
@@ -53,9 +68,9 @@ export default function Landing() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gradient-primary">
                   <Sparkles className="h-6 w-6 text-primary-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold">AI-Powered</h3>
+                <h3 className="text-lg font-semibold">{t("featureAI")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Advanced AI generates creative recipes from your available ingredients
+                  {t("featureAIDesc")}
                 </p>
               </CardContent>
             </Card>
@@ -65,9 +80,9 @@ export default function Landing() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent">
                   <Zap className="h-6 w-6 text-accent-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold">Instant Results</h3>
+                <h3 className="text-lg font-semibold">{t("featureInstant")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Get complete recipes with instructions and calorie estimates in seconds
+                  {t("featureInstantDesc")}
                 </p>
               </CardContent>
             </Card>
@@ -77,9 +92,9 @@ export default function Landing() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary">
                   <BookOpen className="h-6 w-6 text-primary-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold">Save & Organize</h3>
+                <h3 className="text-lg font-semibold">{t("featureSave")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Build your personal recipe collection and access it anytime
+                  {t("featureSaveDesc")}
                 </p>
               </CardContent>
             </Card>

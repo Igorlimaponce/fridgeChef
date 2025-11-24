@@ -24,6 +24,7 @@ export interface PantryItem {
   user_id: string;
   name: string;
   quantity: string;
+  unit?: string;
   created_at: string;
 }
 
@@ -61,6 +62,7 @@ export interface LoginRequest {
 export interface GenerateRecipeRequest {
   ingredients: string[];
   preferences?: string;
+  language?: string;
 }
 
 export interface GenerateRecipeResponse {
@@ -74,4 +76,9 @@ export interface SaveRecipeRequest {
   content_markdown: string;
   ingredients_used: string[];
   calories_estimate: number;
+}
+
+export interface RecipeFilter {
+  ingredient?: string;
+  max_calories?: number;
 }

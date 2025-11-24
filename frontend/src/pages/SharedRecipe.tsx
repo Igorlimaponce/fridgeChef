@@ -1,27 +1,16 @@
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { api } from "@/services/api";
-import { Recipe } from "@/types/api";
 import { Loader2, ChefHat, Flame, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePublicRecipe } from "@/hooks/useQueries";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function SharedRecipe() {
   const { token } = useParams();
-  const [recipe, setRecipe] = useState<Recipe | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: recipe, isLoading, error } = usePublicRecipe(token || "");
+  const { t } = useLanguage();
 
-  useEffect(() => {
-    if (token) {
-      api.getPublicRecipe(token)
-        .then(setRecipe)
-        .catch(() => setError("Recipe not found or private"))
-        .finally(() => setLoading(false));
-    }
-  }, [token]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -33,8 +22,10 @@ export default function SharedRecipe() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-4 text-center">
         <ChefHat className="h-16 w-16 text-muted-foreground/50" />
-        <h1 className="text-2xl font-bold">Recipe Not Found</h1>
-        <p className="text-muted-foreground">{error}</p>
+        <h1 className="text-2xl font-bold">{t("recipeNotFound")}</h1>
+        <p className="text-muted-foreground">
+          {error instanceof Error ? error.message : t("recipeNotFoundDesc")}
+        </p>
       </div>
     );
   }
@@ -48,7 +39,7 @@ export default function SharedRecipe() {
             <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Flame className="h-5 w-5 text-primary" />
-                <span>{recipe.calories_estimate} calories</span>
+                <span>{recipe.calories_estimate} {t("calories")}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-5 w-5" />
@@ -58,7 +49,7 @@ export default function SharedRecipe() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <h3 className="mb-3 text-lg font-semibold">Ingredients</h3>
+              <h3 className="mb-3 text-lg font-semibold">{t("ingredients")}</h3>
               <div className="flex flex-wrap gap-2">
                 {recipe.ingredients_used.map((ingredient) => (
                   <Badge key={ingredient} variant="secondary">

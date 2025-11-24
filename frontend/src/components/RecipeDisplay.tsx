@@ -3,9 +3,10 @@ import { Save, Loader2, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { api } from "@/services/api";
 import { toast } from "sonner";
 import { GenerateRecipeResponse } from "@/types/api";
+import { useSaveRecipe } from "@/hooks/useQueries";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface RecipeDisplayProps {
   recipe: GenerateRecipeResponse;
@@ -14,25 +15,27 @@ interface RecipeDisplayProps {
 }
 
 export function RecipeDisplay({ recipe, ingredients, onSaved }: RecipeDisplayProps) {
-  const [isSaving, setIsSaving] = useState(false);
+  const saveRecipeMutation = useSaveRecipe();
+  const { t } = useLanguage();
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await api.saveRecipe({
+  const handleSave = () => {
+    saveRecipeMutation.mutate(
+      {
         title: recipe.title,
         content_markdown: recipe.content,
         ingredients_used: ingredients,
         calories_estimate: recipe.calories,
-      });
-      toast.success("Recipe saved to your collection!");
-      onSaved?.();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save recipe");
-    } finally {
-      setIsSaving(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          toast.success(t("recipeSaved"));
+          onSaved?.();
+        },
+      }
+    );
   };
+
+  const isSaving = saveRecipeMutation.isPending;
 
   return (
     <Card className="shadow-card">
@@ -42,7 +45,7 @@ export function RecipeDisplay({ recipe, ingredients, onSaved }: RecipeDisplayPro
             <CardTitle className="text-2xl">{recipe.title}</CardTitle>
             <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               <Flame className="h-4 w-4 text-primary" />
-              <span className="font-medium">{recipe.calories} calories</span>
+              <span className="font-medium">{recipe.calories} {t("calories")}</span>
             </div>
           </div>
           <Button
@@ -53,12 +56,12 @@ export function RecipeDisplay({ recipe, ingredients, onSaved }: RecipeDisplayPro
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                {t("saving")}
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Save Recipe
+                {t("saveRecipe")}
               </>
             )}
           </Button>
@@ -66,7 +69,7 @@ export function RecipeDisplay({ recipe, ingredients, onSaved }: RecipeDisplayPro
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="mb-3 font-semibold">Ingredients Used</h3>
+          <h3 className="mb-3 font-semibold">{t("ingredientsUsed")}</h3>
           <div className="flex flex-wrap gap-2">
             {ingredients.map((ingredient) => (
               <Badge key={ingredient} variant="secondary">

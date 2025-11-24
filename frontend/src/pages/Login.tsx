@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -30,6 +31,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -47,7 +49,7 @@ export default function Login() {
         password: data.password,
       });
       login(response.token, response.user);
-      toast.success("Welcome back, Chef!");
+      toast.success(t("welcome"));
       navigate("/dashboard");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Login failed");
@@ -63,8 +65,8 @@ export default function Login() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary">
             <ChefHat className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
-          <CardDescription>Sign in to continue your culinary journey</CardDescription>
+          <CardTitle className="text-3xl font-bold">{t("welcome")}</CardTitle>
+          <CardDescription>{t("loginSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -74,7 +76,7 @@ export default function Login() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t("email")}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="chef@example.com"
@@ -92,7 +94,7 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("password")}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="••••••••"
@@ -113,18 +115,18 @@ export default function Login() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
+                    {t("signingIn")}
                   </>
                 ) : (
-                  "Sign In"
+                  t("loginButton")
                 )}
               </Button>
             </form>
           </Form>
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            {t("noAccount")}{" "}
             <Link to="/register" className="font-medium text-primary hover:underline">
-              Create one
+              {t("createOne")}
             </Link>
           </div>
         </CardContent>

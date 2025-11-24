@@ -5,7 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	appMiddleware "github.com/Igorlimaponce/fridgeChef/backend/middleware"
 	"github.com/Igorlimaponce/fridgeChef/backend/util"
+	"github.com/google/uuid"
 )
 
 type ChefHandler struct {
@@ -28,7 +30,13 @@ func (h *ChefHandler) GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.service.GenerateRecipe(r.Context(), req)
+	userID := appMiddleware.GetUserIDFromCtx(r.Context())
+	if userID == uuid.Nil {
+		util.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	resp, err := h.service.GenerateRecipe(r.Context(), userID, req)
 	if err != nil {
 		log.Printf("ChefService.GenerateRecipe error: %v", err)
 		util.WriteError(w, http.StatusInternalServerError, "failed to generate recipe")

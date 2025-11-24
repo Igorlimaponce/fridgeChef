@@ -10,17 +10,22 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/Igorlimaponce/fridgeChef/backend/internal/pantry"
+	"github.com/google/uuid"
 )
 
 type ChefService struct {
-	apiKey string
-	client *http.Client
+	apiKey        string
+	client        *http.Client
+	pantryService *pantry.PantryService
 }
 
-func NewChefService() *ChefService {
+func NewChefService(pantryService *pantry.PantryService) *ChefService {
 	return &ChefService{
-		apiKey: os.Getenv("GEMINI_API_KEY"),
-		client: &http.Client{Timeout: 60 * time.Second},
+		apiKey:        os.Getenv("GEMINI_API_KEY"),
+		client:        &http.Client{Timeout: 60 * time.Second},
+		pantryService: pantryService,
 	}
 }
 
@@ -47,22 +52,40 @@ type geminiResponse struct {
 	} `json:"candidates"`
 }
 
-func (s *ChefService) GenerateRecipe(ctx context.Context, req GenerateRequest) (*GenerateResponse, error) {
+func (s *ChefService) GenerateRecipe(ctx context.Context, userID uuid.UUID, req GenerateRequest) (*GenerateResponse, error) {
 	if s.apiKey == "" {
 		// Fallback to mock if no API key
 		return s.generateMockRecipe(req)
 	}
 
+	// Fetch pantry items
+	pantryItems, err := s.pantryService.List(ctx, userID)
+	pantryStr := ""
+	if err == nil && len(pantryItems) > 0 {
+		var items []string
+		for _, item := range pantryItems {
+			items = append(items, item.Name)
+		}
+		pantryStr = fmt.Sprintf("The user also has these items in their pantry (use them if needed): %s.", strings.Join(items, ", "))
+	}
+
+	langInstruction := "Respond in English."
+	if req.Language == "pt" {
+		langInstruction = "Respond in Portuguese (pt-BR)."
+	}
+
 	prompt := fmt.Sprintf(`
-You are a professional chef. Create a recipe using these ingredients: %s.
+You are a professional chef. Create a recipe using these main ingredients: %s.
+%s
 Preferences: %s.
+%s
 Return ONLY a JSON object (no markdown formatting) with this structure:
 {
 	"title": "Recipe Title",
 	"content": "Markdown formatted content with Ingredients and Instructions",
 	"calories": 500
 }
-`, strings.Join(req.Ingredients, ", "), req.Preferences)
+`, strings.Join(req.Ingredients, ", "), pantryStr, req.Preferences, langInstruction)
 
 	requestBody := geminiRequest{
 		Contents: []geminiContent{

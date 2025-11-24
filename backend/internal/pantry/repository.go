@@ -18,11 +18,11 @@ func NewPantryRepository(db *sql.DB) *PantryRepository {
 
 func (r *PantryRepository) Create(ctx context.Context, item *PantryItem) (*PantryItem, error) {
 	query := `
-		INSERT INTO pantry_items (user_id, name, quantity)
-		VALUES ($1, $2, $3)
+		INSERT INTO pantry_items (user_id, name, quantity, unit)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at
 	`
-	err := r.db.QueryRowContext(ctx, query, item.UserID, item.Name, item.Quantity).Scan(&item.ID, &item.CreatedAt)
+	err := r.db.QueryRowContext(ctx, query, item.UserID, item.Name, item.Quantity, item.Unit).Scan(&item.ID, &item.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("create pantry item: %w", err)
 	}
@@ -30,7 +30,7 @@ func (r *PantryRepository) Create(ctx context.Context, item *PantryItem) (*Pantr
 }
 
 func (r *PantryRepository) List(ctx context.Context, userID uuid.UUID) ([]*PantryItem, error) {
-	query := `SELECT id, user_id, name, quantity, created_at FROM pantry_items WHERE user_id = $1 ORDER BY name ASC`
+	query := `SELECT id, user_id, name, quantity, unit, created_at FROM pantry_items WHERE user_id = $1 ORDER BY name ASC`
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list pantry items: %w", err)
@@ -40,9 +40,11 @@ func (r *PantryRepository) List(ctx context.Context, userID uuid.UUID) ([]*Pantr
 	var items []*PantryItem = []*PantryItem{}
 	for rows.Next() {
 		var item PantryItem
-		if err := rows.Scan(&item.ID, &item.UserID, &item.Name, &item.Quantity, &item.CreatedAt); err != nil {
+		var unit sql.NullString
+		if err := rows.Scan(&item.ID, &item.UserID, &item.Name, &item.Quantity, &unit, &item.CreatedAt); err != nil {
 			return nil, err
 		}
+		item.Unit = unit.String
 		items = append(items, &item)
 	}
 	return items, nil

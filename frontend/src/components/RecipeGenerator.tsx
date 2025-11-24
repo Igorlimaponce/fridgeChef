@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { X, Plus, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { api } from "@/services/api";
 import { toast } from "sonner";
 import { GenerateRecipeResponse } from "@/types/api";
+import { useGenerateRecipe } from "@/hooks/useQueries";
+import { IngredientSelector } from "@/components/IngredientSelector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface RecipeGeneratorProps {
   onRecipeGenerated: (recipe: GenerateRecipeResponse, ingredients: string[]) => void;
@@ -15,14 +16,14 @@ interface RecipeGeneratorProps {
 
 export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
   const [ingredients, setIngredients] = useState<string[]>([]);
-  const [currentIngredient, setCurrentIngredient] = useState("");
   const [preferences, setPreferences] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { t, language } = useLanguage();
 
-  const addIngredient = () => {
-    if (currentIngredient.trim() && !ingredients.includes(currentIngredient.trim())) {
-      setIngredients([...ingredients, currentIngredient.trim()]);
-      setCurrentIngredient("");
+  const generateRecipeMutation = useGenerateRecipe();
+
+  const addIngredient = (ingredient: string) => {
+    if (ingredient.trim() && !ingredients.includes(ingredient.trim())) {
+      setIngredients([...ingredients, ingredient.trim()]);
     }
   };
 
@@ -30,60 +31,47 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
     setIngredients(ingredients.filter((i) => i !== ingredient));
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addIngredient();
-    }
-  };
-
-  const generateRecipe = async () => {
+  const generateRecipe = () => {
     if (ingredients.length === 0) {
-      toast.error("Please add at least one ingredient");
+      toast.error(t("addIngredientError"));
       return;
     }
 
-    setIsGenerating(true);
-    try {
-      const recipe = await api.generateRecipe({
+    generateRecipeMutation.mutate(
+      {
         ingredients,
         preferences: preferences || undefined,
-      });
-      onRecipeGenerated(recipe, ingredients);
-      toast.success("Recipe generated successfully!");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to generate recipe");
-    } finally {
-      setIsGenerating(false);
-    }
+        language,
+      },
+      {
+        onSuccess: (recipe) => {
+          onRecipeGenerated(recipe, ingredients);
+          toast.success(t("recipeGeneratedSuccess"));
+        },
+      }
+    );
   };
+
+  const isGenerating = generateRecipeMutation.isPending;
 
   return (
     <Card className="shadow-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
-          Generate Recipe from Ingredients
+          {t("recipeGeneratorTitle")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-3">
-          <label className="text-sm font-medium">Your Ingredients</label>
+          <label className="text-sm font-medium">{t("yourIngredients")}</label>
           <div className="flex gap-2">
-            <Input
-              placeholder="e.g., eggs, tomatoes, cheese..."
-              value={currentIngredient}
-              onChange={(e) => setCurrentIngredient(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={isGenerating}
-            />
-            <Button
-              onClick={addIngredient}
-              variant="secondary"
-              disabled={isGenerating || !currentIngredient.trim()}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <div className="flex-1">
+              <IngredientSelector 
+                onSelect={addIngredient} 
+                disabled={isGenerating}
+              />
+            </div>
           </div>
           
           {ingredients.length > 0 && (
@@ -110,10 +98,10 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
 
         <div className="space-y-3">
           <label className="text-sm font-medium">
-            Preferences (optional)
+            {t("preferences")}
           </label>
           <Textarea
-            placeholder="e.g., quick meal, low-carb, spicy..."
+            placeholder={t("preferencesPlaceholder")}
             value={preferences}
             onChange={(e) => setPreferences(e.target.value)}
             disabled={isGenerating}
@@ -130,12 +118,12 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
           {isGenerating ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              AI Chef is cooking...
+              {t("generating")}
             </>
           ) : (
             <>
               <Sparkles className="mr-2 h-5 w-5" />
-              Generate Recipe
+              {t("generateRecipe")}
             </>
           )}
         </Button>

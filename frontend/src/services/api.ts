@@ -276,7 +276,7 @@ ${data.preferences ? `*Note: ${data.preferences}*` : ""}`,
     return (await response.json()) || [];
   },
 
-  async addPantryItem(name: string, quantity: string): Promise<PantryItem> {
+  async addPantryItem(name: string, quantity: string, unit: string): Promise<PantryItem> {
     const token = localStorage.getItem("token");
     const response = await fetch(`${BASE_URL}/pantry`, {
       method: "POST",
@@ -284,7 +284,7 @@ ${data.preferences ? `*Note: ${data.preferences}*` : ""}`,
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ name, quantity }),
+      body: JSON.stringify({ name, quantity, unit }),
     });
     if (!response.ok) throw new Error("Failed to add pantry item");
     return response.json();

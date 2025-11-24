@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const registerSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters"),
@@ -35,6 +36,7 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -55,7 +57,7 @@ export default function Register() {
         password: data.password,
       });
       login(response.token, response.user);
-      toast.success("Account created successfully!");
+      toast.success(t("accountCreated"));
       navigate("/dashboard");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Registration failed");
@@ -71,8 +73,8 @@ export default function Register() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary">
             <ChefHat className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-3xl font-bold">Join Fridge Chef</CardTitle>
-          <CardDescription>Create your account and start cooking with AI</CardDescription>
+          <CardTitle className="text-3xl font-bold">{t("joinApp")}</CardTitle>
+          <CardDescription>{t("registerSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -82,7 +84,7 @@ export default function Register() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{t("username")}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Gordon Ramsay"
@@ -99,7 +101,7 @@ export default function Register() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t("email")}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="chef@example.com"
@@ -117,7 +119,7 @@ export default function Register() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("password")}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="••••••••"
@@ -135,7 +137,7 @@ export default function Register() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel>{t("confirmPassword")}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="••••••••"
@@ -156,18 +158,18 @@ export default function Register() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
+                    {t("creatingAccount")}
                   </>
                 ) : (
-                  "Create Account"
+                  t("createAccount")
                 )}
               </Button>
             </form>
           </Form>
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("hasAccount")}{" "}
             <Link to="/login" className="font-medium text-primary hover:underline">
-              Sign in
+              {t("loginButton")}
             </Link>
           </div>
         </CardContent>

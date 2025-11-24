@@ -19,6 +19,7 @@ func (s *PantryService) Create(ctx context.Context, userID uuid.UUID, req Create
 		UserID:   userID,
 		Name:     req.Name,
 		Quantity: req.Quantity,
+		Unit:     req.Unit,
 	}
 	return s.repo.Create(ctx, item)
 }

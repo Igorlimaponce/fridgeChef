@@ -42,8 +42,13 @@ func NewServer() *http.Server {
 	profanityFilter := filter.NewProfanityFilter()
 	userHandler := user.NewUserHandler(userService, profanityFilter)
 
+	// Init Pantry
+	pantryRepo := pantry.NewPantryRepository(db.GetDB())
+	pantryService := pantry.NewPantryService(pantryRepo)
+	pantryHandler := pantry.NewPantryHandler(pantryService)
+
 	// Init Chef
-	chefService := chef.NewChefService()
+	chefService := chef.NewChefService(pantryService)
 	chefHandler := chef.NewChefHandler(chefService)
 
 	// Init Recipe
@@ -55,11 +60,6 @@ func NewServer() *http.Server {
 	mealPlanRepo := mealplan.NewMealPlanRepository(db.GetDB())
 	mealPlanService := mealplan.NewMealPlanService(mealPlanRepo)
 	mealPlanHandler := mealplan.NewMealPlanHandler(mealPlanService)
-
-	// Init Pantry
-	pantryRepo := pantry.NewPantryRepository(db.GetDB())
-	pantryService := pantry.NewPantryService(pantryRepo)
-	pantryHandler := pantry.NewPantryHandler(pantryService)
 
 	NewServer := &Server{
 		port:            port,
